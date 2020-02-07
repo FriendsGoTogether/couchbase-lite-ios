@@ -101,6 +101,7 @@ typedef enum {
     unsigned _conflictCount;        // Current number of conflict resolving tasks
     BOOL _deferReplicatorNotification; // Defer replicator notification until finishing all conflict resolving tasks
     dispatch_source_t _retryTimer;
+    C4PendingPush* _pendingPush;
 }
 
 @synthesize config=_config;
@@ -285,6 +286,7 @@ typedef enum {
     C4Error err;
     CBL_LOCK(_config.database) {
         _repl = c4repl_new(_config.database.c4db, addr, dbName, otherDB.c4db, params, &err);
+        _pendingPush = c4pending_new(_config.database.c4db, addr, dbName, params);
         
         if (!_repl) {
             NSError *error = nil;
@@ -448,6 +450,125 @@ static C4ReplicatorValidationFunction filter(CBLReplicationFilter filter, bool i
         if ([_docReplicationNotifier removeChangeListenerWithToken: token] == 0)
             _progressLevel = kCBLProgressLevelBasic;
     }
+}
+
+- (C4PendingPush*) pendingPush {
+    if (_pendingPush)
+        return _pendingPush;
+    
+    // create new pending push and assign to _pendingPush
+    id<CBLEndpoint> endpoint = _config.target;
+    C4Address addr = {};
+    NSURL* remoteURL = $castIf(CBLURLEndpoint, endpoint).url;
+    CBLStringBytes dbName(remoteURL.path.lastPathComponent);
+    CBLStringBytes scheme(remoteURL.scheme);
+    CBLStringBytes host(remoteURL.host);
+    CBLStringBytes path(remoteURL.path.stringByDeletingLastPathComponent);
+    if (remoteURL) {
+        // Fill out the C4Address:
+        NSUInteger port = [remoteURL.port unsignedIntegerValue];
+        addr = {
+            .scheme = scheme,
+            .hostname = host,
+            .port = (uint16_t)port,
+            .path = path
+        };
+    }
+   
+    // Encode the options:
+    alloc_slice optionsFleece;
+    
+    NSMutableDictionary* options = [_config.effectiveOptions mutableCopy];
+    options[@kC4ReplicatorOptionProgressLevel] = @(_progressLevel);
+    
+    // Update resetCheckpoint flag if needed:
+    if (_resetCheckpoint) {
+        options[@kC4ReplicatorResetCheckpoint] = @(YES);
+    }
+    
+    if (options.count) {
+        Encoder enc;
+        enc << options;
+        optionsFleece = enc.finish();
+    }
+    
+    C4SocketFactory socketFactory = { };
+#ifdef COUCHBASE_ENTERPRISE
+    auto messageEndpoint = $castIf(CBLMessageEndpoint, endpoint);
+    if (messageEndpoint) {
+        socketFactory = messageEndpoint.socketFactory;
+        addr.scheme = C4STR("x-msg-endpt"); // put something in the address so it's not illegal
+    } else
+#endif
+        if (remoteURL)
+            socketFactory = CBLWebSocket.socketFactory;
+    socketFactory.context = (__bridge void*)self;
+    
+    // Create a C4Replicator:
+    C4ReplicatorParameters params = {
+        .push = mkmode(isPush(_config.replicatorType), _config.continuous),
+        .pull = mkmode(isPull(_config.replicatorType), _config.continuous),
+        .pushFilter = filter(_config.pushFilter, true),
+        .validationFunc = filter(_config.pullFilter, false),
+        .optionsDictFleece = {optionsFleece.buf, optionsFleece.size},
+        .onStatusChanged = &statusChanged,
+        .onDocumentsEnded = &onDocsEnded,
+        .callbackContext = (__bridge void*)self,
+        .socketFactory = &socketFactory,
+        .dontStart = true,
+    };
+    
+    _pendingPush = c4pending_new(_config.database.c4db, addr,  dbName, params);
+    return _pendingPush;
+}
+
+- (NSSet<NSString*>*) pendingDocumentIds: (NSError**)error {
+    if (_config.replicatorType > 1) {
+        if (error)
+            *error = [NSError errorWithDomain: CBLErrorDomain
+                                         code: CBLErrorUnsupported
+                                     userInfo: @{NSLocalizedDescriptionKey: kCBLErrorMessagePullOnlyPendingDocIDs}];
+        return nil;
+    }
+    
+    C4Error c4err = {};
+    C4SliceResult result = c4pending_getPendingDocIDs([self pendingPush], &c4err);
+    if (c4err.code > 0) {
+        convertError(c4err, error);
+        CBLWarnError(Sync, @"Error while fetching pending documentIds: %d/%d", c4err.domain, c4err.code);
+        return nil;
+    }
+
+    if (result.size <= 0)
+        return [NSSet set];
+
+    FLValue val = FLValue_FromData(C4Slice(result), kFLTrusted);
+    NSArray<NSString*>* list = FLValue_GetNSObject(val, nullptr);
+
+    return [NSSet setWithArray: list];
+}
+
+- (BOOL) isDocumentPending: (NSString*)documentID error: (NSError**)error {
+    CBLAssertNotNil(documentID);
+
+    if (_config.replicatorType > 1) {
+        if (error)
+            *error = [NSError errorWithDomain: CBLErrorDomain
+                code: CBLErrorUnsupported
+            userInfo: @{NSLocalizedDescriptionKey: kCBLErrorMessagePullOnlyPendingDocIDs}];
+        return NO;
+    }
+
+    C4Error c4err = {};
+    CBLStringBytes docID(documentID);
+    BOOL isPending = c4pending_isDocumentPending([self pendingPush], docID, &c4err);
+    if (c4err.code > 0) {
+        convertError(c4err, error);
+        CBLWarnError(Sync, @"Error getting document pending status: %d/%d", c4err.domain, c4err.code);
+        return false;
+    }
+
+    return isPending;
 }
 
 #pragma mark - STATUS CHANGES:
