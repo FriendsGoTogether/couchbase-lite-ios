@@ -18,7 +18,7 @@
 
 @implementation URLEndpointListenerTest
 
-- (void) testStartListener {
+- (void) testStartListenerPort {
     CBLURLEndpointListenerConfiguration* config = [[CBLURLEndpointListenerConfiguration alloc] initWithDatabase: self.db
                                                                                                            port: 0
                                                                                                        identity: nil];
@@ -26,6 +26,24 @@
     
     NSError* err = nil;
     [listener startWithError: &err];
+    [NSThread sleepForTimeInterval: 1.0];
+    
+    [listener stop];
 }
+
+- (void) testStartListenerPortAndNetworkInterface {
+    CBLURLEndpointListenerConfiguration* config = [[CBLURLEndpointListenerConfiguration alloc] initWithDatabase: self.db
+                                                                                                           port: 0
+                                                                                               networkInterface: @"localhost"
+                                                                                                       identity: nil];
+    CBLURLEndpointListener* listener = [[CBLURLEndpointListener alloc] initWithConfig: config];
+    
+    NSError* err = nil;
+    [listener startWithError: &err];
+    [NSThread sleepForTimeInterval: 1.0];
+    
+    [listener stop];
+}
+
 
 @end
