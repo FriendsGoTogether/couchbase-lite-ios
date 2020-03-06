@@ -18,31 +18,43 @@
 
 @implementation URLEndpointListenerTest
 
-- (void) testStartListenerPort {
-    CBLURLEndpointListenerConfiguration* config = [[CBLURLEndpointListenerConfiguration alloc] initWithDatabase: self.db
-                                                                                                           port: 0
-                                                                                                       identity: nil];
-    CBLURLEndpointListener* listener = [[CBLURLEndpointListener alloc] initWithConfig: config];
+- (CBLURLEndpointListener*) listenTo: (NSString*)network port: (uint16)port {
+    CBLURLEndpointListener* listener;
+    CBLURLEndpointListenerConfiguration* config;
+    if (network) {
+        config = [[CBLURLEndpointListenerConfiguration alloc] initWithDatabase: self.db
+                                                                          port: port
+                                                              networkInterface: network
+                                                                      identity: nil];
+    } else {
+        config = [[CBLURLEndpointListenerConfiguration alloc] initWithDatabase: self.db
+                                                                          port: 0
+                                                                      identity: nil];
+    }
+    
+    listener = [[CBLURLEndpointListener alloc] initWithConfig: config];
     
     NSError* err = nil;
     [listener startWithError: &err];
+    return listener;
+}
+
+- (void) testStartListenerPort {
+    CBLURLEndpointListener* list = [self listenTo: nil port: 0];
     [NSThread sleepForTimeInterval: 1.0];
     
-    [listener stop];
+    [list stop];
 }
 
 - (void) testStartListenerPortAndNetworkInterface {
-    CBLURLEndpointListenerConfiguration* config = [[CBLURLEndpointListenerConfiguration alloc] initWithDatabase: self.db
-                                                                                                           port: 0
-                                                                                               networkInterface: @"localhost"
-                                                                                                       identity: nil];
-    CBLURLEndpointListener* listener = [[CBLURLEndpointListener alloc] initWithConfig: config];
+    NSURL* url = [[NSURL alloc] initWithString: @"http://127.0.0.1:8080"];
+    CBLURLEndpointListener* list = [self listenTo: url.host port: 8080];
     
-    NSError* err = nil;
-    [listener startWithError: &err];
-    [NSThread sleepForTimeInterval: 1.0];
+    CBLURLEndpoint* target = [[CBLURLEndpoint alloc] initWithURL: url];
+    id config = [self configWithTarget: target type: kCBLReplicatorTypePush continuous: NO];
+    [self run: config errorCode: 0 errorDomain: nil];
     
-    [listener stop];
+    [list stop];
 }
 
 
