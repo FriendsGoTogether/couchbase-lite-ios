@@ -28,7 +28,7 @@
                                                                       identity: nil];
     } else {
         config = [[CBLURLEndpointListenerConfiguration alloc] initWithDatabase: otherDB
-                                                                          port: 0
+                                                                          port: port
                                                                       identity: nil];
     }
     
@@ -39,16 +39,27 @@
     return listener;
 }
 
-- (void) testStartListenerPort {
-    CBLURLEndpointListener* list = [self listenTo: nil port: 0];
-    [NSThread sleepForTimeInterval: 1.0];
+- (void) testWithPortOnly {
+    CBLDatabase.log.console.level = kCBLLogLevelInfo;
+    NSString* urlString = [NSString stringWithFormat: @"ws://localhost:5666/%@", otherDB.name];
+    NSURL* url = [[NSURL alloc] initWithString: urlString];
+    CBLURLEndpointListener* list = [self listenTo: nil port: 5666];
+
+    [self generateDocumentWithID: @"doc-1"];
+    CBLURLEndpoint* target = [[CBLURLEndpoint alloc] initWithURL: url];
+    id config = [self configWithTarget: target type: kCBLReplicatorTypePush continuous: NO];
+    [self run: config errorCode: 0 errorDomain: nil];
+    
+    AssertEqual(self.db.count, 1);
+    AssertEqual(otherDB.count, 1);
     
     [list stop];
 }
 
-- (void) testStartListenerPortAndNetworkInterface {
+- (void) testWithHostAndPort {
     CBLDatabase.log.console.level = kCBLLogLevelInfo;
-    NSURL* url = [[NSURL alloc] initWithString: @"ws://127.0.0.1:8080/testdb"];
+    NSString* urlString = [NSString stringWithFormat: @"ws://127.0.0.1:8080/%@", otherDB.name];
+    NSURL* url = [[NSURL alloc] initWithString: urlString];
     CBLURLEndpointListener* list = [self listenTo: url.host port: 8080];
 
     [self generateDocumentWithID: @"doc-1"];
