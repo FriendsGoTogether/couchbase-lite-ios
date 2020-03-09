@@ -7,6 +7,7 @@
 //
 
 #import "ReplicatorTest.h"
+#import "CBLDatabase+Internal.h"
 
 #ifndef COUCHBASE_ENTERPRISE
 #error Couchbase Lite EE Only
@@ -151,7 +152,40 @@
     [listToDB stop];
 }
 
-- (void) testConflictResolution { }
+- (void) testConflictResolution {
+    NSError* err = nil;
+    CBLMutableDocument* doc1 = [self createDocument: @"doc-1"];
+    [doc1 setString: @"add" forKey: @"action"];
+    Assert([self.db saveDocument: doc1 error: &err]);
+    AssertNil(err);
+    
+    doc1 = [self createDocument: @"doc-1"];
+    [doc1 setString: @"add" forKey: @"action"];
+    Assert([otherDB saveDocument: doc1 error: &err]);
+    AssertNil(err);
+    
+    doc1 = [[otherDB documentWithID: @"doc-1"] toMutable];
+    [doc1 setString: @"addition" forKey: @"action"];
+    Assert([otherDB saveDocument: doc1 error: &err]);
+    AssertNil(err);
+    AssertEqual([otherDB documentWithID: @"doc-1"].sequence, 2);
+    
+    NSString* urlString = [NSString stringWithFormat: @"ws://127.0.0.1:8080/%@", otherDB.name];
+    NSURL* url = [[NSURL alloc] initWithString: urlString];
+    CBLURLEndpointListener* list = [self listenTo: url.host port: 8080 database: otherDB];
+
+    CBLURLEndpoint* target = [[CBLURLEndpoint alloc] initWithURL: url];
+    id config = [self configWithTarget: target type: kCBLReplicatorTypePushAndPull continuous: NO];
+    [self run: config errorCode: 0 errorDomain: nil];
+    
+    AssertEqual(self.db.count, 1);
+    AssertEqual([self.db documentWithID: @"doc-1"].sequence, 2);
+    
+    AssertEqual(otherDB.count, 1);
+    AssertEqual([otherDB documentWithID: @"doc-1"].sequence, 2);
+    
+    [list stop];
+}
 
 #pragma mark - Authentication
 
