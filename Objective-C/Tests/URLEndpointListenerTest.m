@@ -105,7 +105,9 @@
     
     AssertEqual(self.db.count, 1);
     for (uint16 i = 0; i < 10; i++) {
+        NSError* err = nil;
         AssertEqual([dbs objectAtIndex: i].count, 1);
+        Assert([[dbs objectAtIndex: i] close: &err]);
     }
     
     for (uint16 i = 0; i < 10; i++) {
@@ -113,7 +115,42 @@
     }
 }
 
-- (void) testListenerWithActiveReplication { }
+- (void) testListenerWithActiveReplication {
+    [self generateDocumentWithID: @"doc-1"];
+    
+    NSError* err = nil;
+    CBLMutableDocument* doc2 = [self createDocument: @"doc-2"];
+    [doc2 setString: @"VALUE" forKey: @"key"];
+    [otherDB saveDocument: doc2 error: &err];
+    
+    // passive listener - otherDB
+    NSString* urlString = [NSString stringWithFormat: @"ws://127.0.0.1:8080/%@", otherDB.name];
+    NSURL* urlToOtherDB = [[NSURL alloc] initWithString: urlString];
+    CBLURLEndpointListener* listToOtherDB = [self listenTo: urlToOtherDB.host port: 8080 database: otherDB];
+    
+    // passive listener - self.db
+    urlString = [NSString stringWithFormat: @"ws://127.0.0.1:8081/%@", self.db.name];
+    NSURL* urlToDB = [[NSURL alloc] initWithString: urlString];
+    CBLURLEndpointListener* listToDB = [self listenTo: urlToDB.host port: 8081 database: self.db];
+    
+    CBLURLEndpoint* targetToOtherDB = [[CBLURLEndpoint alloc] initWithURL: urlToOtherDB];
+    id config = [self configWithTarget: targetToOtherDB type: kCBLReplicatorTypePush continuous: NO];
+    [self run: config errorCode: 0 errorDomain: nil];
+    
+    CBLURLEndpoint* targetToDB = [[CBLURLEndpoint alloc] initWithURL: urlToDB];
+    CBLReplicatorConfiguration* c = [[CBLReplicatorConfiguration alloc] initWithDatabase: otherDB
+                                                                                  target: targetToDB];
+    [self run: c errorCode: 0 errorDomain: nil];
+    
+    AssertEqual(self.db.count, 2);
+    AssertEqual(otherDB.count, 2);
+    
+    // TODO: check the custom network interface is same!
+    
+    [listToOtherDB stop];
+    [listToDB stop];
+}
+
 - (void) testConflictResolution { }
 
 #pragma mark - Authentication
