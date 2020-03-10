@@ -23,7 +23,6 @@
 - (CBLURLEndpointListener*) listenTo: (NSString*)network
                                 port: (uint16)port
                             database: (CBLDatabase*)database {
-    CBLURLEndpointListener* listener;
     CBLURLEndpointListenerConfiguration* config;
     if (network) {
         config = [[CBLURLEndpointListenerConfiguration alloc] initWithDatabase: database
@@ -36,7 +35,11 @@
                                                                       identity: nil];
     }
     
-    listener = [[CBLURLEndpointListener alloc] initWithConfig: config];
+    return [self listen: config];
+}
+
+- (CBLURLEndpointListener*) listen: (CBLURLEndpointListenerConfiguration*)config {
+    CBLURLEndpointListener* listener = [[CBLURLEndpointListener alloc] initWithConfig: config];
     
     NSError* err = nil;
     [listener startWithError: &err];
@@ -189,17 +192,71 @@
 
 #pragma mark - Authentication
 
+// release after done: `SecIdentityRef` => if (identity) { CFRelease(identity); }
+- (SecIdentityRef) getSecIdentity: (SecCertificateRef)certificate {
+    SecIdentityRef identity = NULL;
+    OSStatus status =
+        SecIdentityCreateWithCertificate(NULL, certificate, &identity);
+    if (status != errSecSuccess)
+        Assert(NO);
+    
+    return identity;
+}
+
+- (void) testTLSIdentity {
+    CBLURLEndpointListenerConfiguration * config;
+    SecIdentityRef identity;
+    CBLTLSIdentity* tls = [[CBLTLSIdentity alloc] initWithIdentity: identity caCerts: @[]];
+    config = [[CBLURLEndpointListenerConfiguration alloc] initWithDatabase: otherDB
+                                                                      port: 8080 identity: tls];
+    
+    NSString* urlString = [NSString stringWithFormat: @"ws://127.0.0.1:8080/%@", otherDB.name];
+    NSURL* url = [[NSURL alloc] initWithString: urlString];
+    CBLURLEndpointListener* list = [self listenTo: url.host port: 8080 database: otherDB];
+
+    CBLURLEndpoint* target = [[CBLURLEndpoint alloc] initWithURL: url];
+    id replConf = [self configWithTarget: target type: kCBLReplicatorTypePushAndPull continuous: NO];
+    [self run: replConf errorCode: 0 errorDomain: nil];
+    
+    if (identity) { CFRelease(identity); }
+}
+- (void) testUnAuthorizedAccess { }
+
+
 - (void) testBasicAuthentication { }
 - (void) testIncorrectBasicAuthentication { }
+
 - (void) testCertificateAuthentication { }
 - (void) testIncorrectCertificateAuthentication { }
-- (void) testTLSIdentity { }
-- (void) testUnAuthorizedAccess { }
+
+#pragma mark - TLS Identity
+- (void) testCreateServerTLSIdentity { }
+- (void) testCreateServerTLSIdentityWithExpiration {
+    // include default expiration check
+}
+- (void) testCreateServerTLSIdentityWithAllAttributes { }
+- (void) testCreateServerTLSIdentityWithInvalidAttributes { }
+
+- (void) testCreateClientTLSIdentity { }
+- (void) testCreateClientTLSIdentityWithExpiration {
+    // include default expiration check
+}
+- (void) testCreateClientTLSIdentityWithAllAttributes { }
+- (void) testCreateClientTLSIdentityWithInvalidAttributes { }
+
+- (void) testStoreServerTLSIdentity { }
+- (void) testDeleteServerTLSIdentity { }
+- (void) testGetServerTLSIdentity { }
 
 #pragma mark - Corner Cases
 
-- (void) testReservedPortAccess { }
-- (void) testIncorrectNetworkInterface { }
+- (void) testReservedPortAccess { }             // lite core ??
+- (void) testIncorrectNetworkInterface { }      // lite core ??
 
+
+#pragma mark - LiteCore tests
+// - invalid TLSIdentity name components.
+// - reserved and invalid port access
+// - invalid network interface
 
 @end
