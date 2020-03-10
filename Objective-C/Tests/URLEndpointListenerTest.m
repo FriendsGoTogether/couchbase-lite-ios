@@ -190,20 +190,8 @@
     [list stop];
 }
 
-#pragma mark - Authentication
-
-// release after done: `SecIdentityRef` => if (identity) { CFRelease(identity); }
-- (SecIdentityRef) getSecIdentity: (SecCertificateRef)certificate {
-    SecIdentityRef identity = NULL;
-    OSStatus status =
-        SecIdentityCreateWithCertificate(NULL, certificate, &identity);
-    if (status != errSecSuccess)
-        Assert(NO);
-    
-    return identity;
-}
-
-- (void) testTLSIdentity {
+#pragma mark - TLS Identity
+- (void) testAuthorizationWithTLSIdentity {
     CBLURLEndpointListenerConfiguration * config;
     SecIdentityRef identity;
     CBLTLSIdentity* tls = [[CBLTLSIdentity alloc] initWithIdentity: identity caCerts: @[]];
@@ -220,33 +208,33 @@
     
     if (identity) { CFRelease(identity); }
 }
-- (void) testUnAuthorizedAccess { }
 
+- (void) testUnAuthorizedTLSIdentity { }
+- (void) testPassServerCertForClientAccess { }
+- (void) testPassClientCertForServerAccess { }
 
+- (void) testCreateBasicServerTLSIdentity {
+    // pass empty attributes and empty expiry
+}
+- (void) testCreateServerTLSIdentityWithExpiration {
+    // With Specified expiry and check whether invalid after specified date
+}
+- (void) testCreateServerTLSIdentityWithAllAttributes { }
+- (void) testCreateServerTLSIdentityWithInvalidAttributes { }
+- (void) testCreateClientTLSIdentityWithAllAttributes {
+    // only basic test for client, since server is similar with client
+}
+
+- (void) testStoreServerTLSIdentity { }
+- (void) testDeleteServerTLSIdentity { }
+- (void) testGetServerTLSIdentity { }
+
+#pragma mark - Authentication
 - (void) testBasicAuthentication { }
 - (void) testIncorrectBasicAuthentication { }
 
 - (void) testCertificateAuthentication { }
 - (void) testIncorrectCertificateAuthentication { }
-
-#pragma mark - TLS Identity
-- (void) testCreateServerTLSIdentity { }
-- (void) testCreateServerTLSIdentityWithExpiration {
-    // include default expiration check
-}
-- (void) testCreateServerTLSIdentityWithAllAttributes { }
-- (void) testCreateServerTLSIdentityWithInvalidAttributes { }
-
-- (void) testCreateClientTLSIdentity { }
-- (void) testCreateClientTLSIdentityWithExpiration {
-    // include default expiration check
-}
-- (void) testCreateClientTLSIdentityWithAllAttributes { }
-- (void) testCreateClientTLSIdentityWithInvalidAttributes { }
-
-- (void) testStoreServerTLSIdentity { }
-- (void) testDeleteServerTLSIdentity { }
-- (void) testGetServerTLSIdentity { }
 
 #pragma mark - Corner Cases
 
