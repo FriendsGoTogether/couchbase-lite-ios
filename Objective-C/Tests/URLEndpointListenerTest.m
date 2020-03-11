@@ -191,25 +191,33 @@
 }
 
 #pragma mark - TLS Identity
-- (void) testAuthorizationWithTLSIdentity {
+- (void) _testAuthorizationWithTLSIdentity {
+    NSError* error = nil;
     CBLURLEndpointListenerConfiguration * config;
-    SecIdentityRef identity;
-    CBLTLSIdentity* tls = [[CBLTLSIdentity alloc] initWithIdentity: identity caCerts: @[]];
+    CBLTLSIdentity* tls = [CBLTLSIdentity createServerIdentity: @{} expiration: nil error: &error];
     config = [[CBLURLEndpointListenerConfiguration alloc] initWithDatabase: otherDB
                                                                       port: 8080 identity: tls];
     
     NSString* urlString = [NSString stringWithFormat: @"ws://127.0.0.1:8080/%@", otherDB.name];
     NSURL* url = [[NSURL alloc] initWithString: urlString];
-    CBLURLEndpointListener* list = [self listenTo: url.host port: 8080 database: otherDB];
-
+    CBLURLEndpointListener* list = [self listen: config];
+    
     CBLURLEndpoint* target = [[CBLURLEndpoint alloc] initWithURL: url];
-    id replConf = [self configWithTarget: target type: kCBLReplicatorTypePushAndPull continuous: NO];
+    CBLReplicatorConfiguration* replConf = [self configWithTarget: target
+                                                             type: kCBLReplicatorTypePushAndPull
+                                                       continuous: NO];
+    SecCertificateRef cert = NULL;
+    OSStatus status = SecIdentityCopyCertificate(tls.identity, &cert);
+    Assert(status == errSecSuccess);
+    Assert(cert != NULL);
+    replConf.pinnedServerCertificate = cert;
     [self run: replConf errorCode: 0 errorDomain: nil];
     
-    if (identity) { CFRelease(identity); }
+    [list stop];
 }
 
 - (void) testUnAuthorizedTLSIdentity { }
+
 - (void) testPassServerCertForClientAccess { }
 - (void) testPassClientCertForServerAccess { }
 
