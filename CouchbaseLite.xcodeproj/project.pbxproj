@@ -43,8 +43,8 @@
 		1A690CD6242150DE0084D017 /* ReplicatorTest+PendingDocIds.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A690CC824214EE70084D017 /* ReplicatorTest+PendingDocIds.swift */; };
 		1A690CD7242150DF0084D017 /* ReplicatorTest+PendingDocIds.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A690CC824214EE70084D017 /* ReplicatorTest+PendingDocIds.swift */; };
 		1A8DD7DA21C9876E00741C47 /* DateTimeQueryFunctionTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A8DD7D921C9876E00741C47 /* DateTimeQueryFunctionTest.swift */; };
-		1A95DA1224170051004965D9 /* CBLTLSIdentity.h in Headers */ = {isa = PBXBuildFile; fileRef = 1A95DA1024170051004965D9 /* CBLTLSIdentity.h */; };
-		1A95DA1324170051004965D9 /* CBLTLSIdentity.h in Headers */ = {isa = PBXBuildFile; fileRef = 1A95DA1024170051004965D9 /* CBLTLSIdentity.h */; };
+		1A95DA1224170051004965D9 /* CBLTLSIdentity.h in Headers */ = {isa = PBXBuildFile; fileRef = 1A95DA1024170051004965D9 /* CBLTLSIdentity.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		1A95DA1324170051004965D9 /* CBLTLSIdentity.h in Headers */ = {isa = PBXBuildFile; fileRef = 1A95DA1024170051004965D9 /* CBLTLSIdentity.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		1A95DA1424170051004965D9 /* CBLTLSIdentity.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1A95DA1124170051004965D9 /* CBLTLSIdentity.mm */; };
 		1A95DA1524170051004965D9 /* CBLTLSIdentity.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1A95DA1124170051004965D9 /* CBLTLSIdentity.mm */; };
 		1AA3D6C122A1A41E0098E16B /* ReplicatorTest+CustomConflict.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA3D6B022A1A3490098E16B /* ReplicatorTest+CustomConflict.swift */; };
