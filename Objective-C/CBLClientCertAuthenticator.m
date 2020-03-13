@@ -19,6 +19,7 @@
 
 #import "CBLClientCertAuthenticator.h"
 #import "MYAnonymousIdentity.h"
+#import "CBLAuthenticator+Internal.h"
 
 @implementation CBLClientCertAuthenticator
 {
