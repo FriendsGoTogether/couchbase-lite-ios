@@ -8,6 +8,7 @@
 
 #import "ReplicatorTest.h"
 #import "CBLDatabase+Internal.h"
+#import "MYAnonymousIdentity.h"
 
 #ifndef COUCHBASE_ENTERPRISE
 #error Couchbase Lite EE Only
@@ -216,8 +217,65 @@
     [list stop];
 }
 
-- (void) testUnAuthorizedTLSIdentity { }
+#pragma mark - Authentication
+- (void) testBasicAuthentication {
+    NSString* urlString = [NSString stringWithFormat: @"ws://127.0.0.1:8080/%@", otherDB.name];
+    NSURL* url = [[NSURL alloc] initWithString: urlString];
+    CBLURLEndpointListener* list = [self listenTo: url.host port: 8080 database: otherDB];
+    
+    [self generateDocumentWithID: @"doc-1"];
+    CBLURLEndpoint* target = [[CBLURLEndpoint alloc] initWithURL: url];
+    CBLReplicatorConfiguration* config = [self configWithTarget: target
+                                                           type: kCBLReplicatorTypePush
+                                                     continuous: NO];
+    config.authenticator = [[CBLBasicAuthenticator alloc] initWithUsername: @"username" password: @"password"];
+    
+    [self run: config errorCode: 0 errorDomain: nil];
+    
+    AssertEqual(self.db.count, 1);
+    AssertEqual(otherDB.count, 1);
+    
+    // TODO: check the custom network interface is same!
+    
+    [list stop];
+}
 
+- (void) _testCertificateAuthentication {
+    NSString* urlString = [NSString stringWithFormat: @"ws://127.0.0.1:8080/%@", otherDB.name];
+    NSURL* url = [[NSURL alloc] initWithString: urlString];
+    CBLURLEndpointListener* list = [self listenTo: url.host port: 8080 database: otherDB];
+    
+    [self generateDocumentWithID: @"doc-1"];
+    CBLURLEndpoint* target = [[CBLURLEndpoint alloc] initWithURL: url];
+    CBLReplicatorConfiguration* config = [self configWithTarget: target
+                                                           type: kCBLReplicatorTypePush
+                                                     continuous: NO];
+    
+    NSError* error = nil;
+    SecIdentityRef ref = MYGetOrCreateAnonymousIdentity(@"MyCertIdentity", 10, &error);
+    CBLClientCertAuthenticator* certAuth = [[CBLClientCertAuthenticator alloc] initWithIdentityID: @"MyCertIdentity"];
+    config.authenticator = certAuth;
+    CFRelease(ref);
+    [self run: config errorCode: 0 errorDomain: nil];
+    
+    AssertEqual(self.db.count, 1);
+    AssertEqual(otherDB.count, 1);
+    
+    // TODO: check the custom network interface is same!
+    
+    [list stop];
+}
+
+- (void) testIncorrectBasicAuthentication { }
+- (void) testIncorrectCertificateAuthentication { }
+
+#pragma mark - Corner Cases
+
+- (void) testReservedPortAccess { }             // lite core ??
+- (void) testIncorrectNetworkInterface { }      // lite core ??
+
+#pragma mark -  p2
+- (void) testUnAuthorizedTLSIdentity { }
 - (void) testPassServerCertForClientAccess { }
 - (void) testPassClientCertForServerAccess { }
 
@@ -236,18 +294,6 @@
 - (void) testStoreServerTLSIdentity { }
 - (void) testDeleteServerTLSIdentity { }
 - (void) testGetServerTLSIdentity { }
-
-#pragma mark - Authentication
-- (void) testBasicAuthentication { }
-- (void) testIncorrectBasicAuthentication { }
-
-- (void) testCertificateAuthentication { }
-- (void) testIncorrectCertificateAuthentication { }
-
-#pragma mark - Corner Cases
-
-- (void) testReservedPortAccess { }             // lite core ??
-- (void) testIncorrectNetworkInterface { }      // lite core ??
 
 
 #pragma mark - LiteCore tests
