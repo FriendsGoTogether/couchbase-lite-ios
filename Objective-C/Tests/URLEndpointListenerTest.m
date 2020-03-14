@@ -196,10 +196,11 @@
     NSError* error = nil;
     CBLURLEndpointListenerConfiguration * config;
     CBLTLSIdentity* tls = [CBLTLSIdentity createServerIdentity: @{} expiration: nil error: &error];
+    
     config = [[CBLURLEndpointListenerConfiguration alloc] initWithDatabase: otherDB
                                                                       port: 8080 identity: tls];
     
-    NSString* urlString = [NSString stringWithFormat: @"ws://127.0.0.1:8080/%@", otherDB.name];
+    NSString* urlString = [NSString stringWithFormat: @"wss://127.0.0.1:8080/%@", otherDB.name];
     NSURL* url = [[NSURL alloc] initWithString: urlString];
     CBLURLEndpointListener* list = [self listen: config];
     
