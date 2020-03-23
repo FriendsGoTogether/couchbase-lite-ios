@@ -191,6 +191,68 @@
     [list stop];
 }
 
+- (void) _testListenerWithMultiplePeers {
+    CBLDatabase.log.console.level = kCBLLogLevelInfo;
+    CBLURLEndpointListener* list = [self listenTo: @"127.0.0.1" port: 8080 database: self.db];
+    
+    // DB - 1
+    NSError* error = nil;
+    CBLDatabase* db = [[CBLDatabase alloc] initWithName: @"dbName-1" error: &error];
+    AssertNil(error);
+    
+    CBLMutableDocument* doc = [CBLMutableDocument documentWithID: @"doc-1"];
+    [doc setString: @"data1" forKey: @"key"];
+    [db saveDocument: doc error: &error];
+    AssertNil(error);
+    
+    NSString* urlString = [NSString stringWithFormat: @"ws://127.0.0.1:8080/%@", self.db.name];
+    NSURL* url = [[NSURL alloc] initWithString: urlString];
+    CBLURLEndpoint* t = [[CBLURLEndpoint alloc] initWithURL: url];
+    
+    CBLReplicatorConfiguration* config = [[CBLReplicatorConfiguration alloc] initWithDatabase: db
+                                                                                       target: t];
+    
+    XCTestExpectation* ex1 = [self expectationWithDescription: @"ex1"];
+    CBLReplicator* repl1 = [[CBLReplicator alloc] initWithConfig: config];
+    id token1 = [repl1 addChangeListener: ^(CBLReplicatorChange * change) {
+        if (change.status.activity == kCBLReplicatorStopped) {
+            [ex1 fulfill];
+        }
+    }];
+    
+    // DB - 2
+    db = [[CBLDatabase alloc] initWithName: @"dbName-1" error: &error];
+    AssertNil(error);
+    doc = [CBLMutableDocument documentWithID: @"doc-1"];
+    [doc setString: @"data1" forKey: @"key"];
+    [db saveDocument: doc error: &error];
+    AssertNil(error);
+    
+    urlString = [NSString stringWithFormat: @"ws://127.0.0.1:8080/%@", self.db.name];
+    url = [[NSURL alloc] initWithString: urlString];
+    t = [[CBLURLEndpoint alloc] initWithURL: url];
+    
+    config = [[CBLReplicatorConfiguration alloc] initWithDatabase: db target: t];
+    
+    XCTestExpectation* ex2 = [self expectationWithDescription: @"ex2"];
+    CBLReplicator* repl2 = [[CBLReplicator alloc] initWithConfig: config];
+    id token2 = [repl2 addChangeListener: ^(CBLReplicatorChange * change) {
+        if (change.status.activity == kCBLReplicatorStopped) {
+            [ex2 fulfill];
+        }
+    }];
+    
+    [repl1 start];
+    [repl2 start];
+    
+    [self waitForExpectations: @[ex1, ex2] timeout: 5.0];
+    [repl1 removeChangeListenerWithToken: token1];
+    [repl2 removeChangeListenerWithToken: token2];
+    
+    [list stop];
+}
+
+
 #pragma mark - TLS Identity
 - (void) _testAuthorizationWithTLSIdentity {
     NSError* error = nil;
