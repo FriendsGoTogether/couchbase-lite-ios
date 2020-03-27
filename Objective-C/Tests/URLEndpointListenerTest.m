@@ -68,6 +68,26 @@
     [list stop];
 }
 
+- (void) testDefaultPort {
+    CBLDatabase.log.console.level = kCBLLogLevelInfo;
+    NSString* urlString = [NSString stringWithFormat: @"ws://localhost:4984/%@", otherDB.name];
+    NSURL* url = [[NSURL alloc] initWithString: urlString];
+    CBLURLEndpointListener* list = [self listenTo: nil port: 0 database: otherDB];
+
+    [self generateDocumentWithID: @"doc-1"];
+    CBLURLEndpoint* target = [[CBLURLEndpoint alloc] initWithURL: url];
+    id config = [self configWithTarget: target type: kCBLReplicatorTypePush continuous: NO];
+    [self run: config errorCode: 0 errorDomain: nil];
+    
+    AssertEqual(self.db.count, 1);
+    AssertEqual(otherDB.count, 1);
+    
+    // TODO: get and verify the ports are same!
+    
+    [list stop];
+}
+
+
 - (void) testCustomNetworkInterface {
     NSString* urlString = [NSString stringWithFormat: @"ws://127.0.0.1:8080/%@", otherDB.name];
     NSURL* url = [[NSURL alloc] initWithString: urlString];
