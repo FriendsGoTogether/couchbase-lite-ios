@@ -297,6 +297,10 @@ static void doDispose(C4Socket* s) {
         if (_options[kC4ReplicatorOptionPinnedServerCert])
             [settings setObject: @NO
                          forKey: (__bridge id)kCFStreamSSLValidatesCertificateChain];
+        
+        if (_clientCertID)
+            [settings setObject:@[ (__bridge id) MYFindIdentity(_clientCertID) ]
+                         forKey: (__bridge id) kCFStreamSSLCertificates];
 
         if (![_in setProperty: settings
                        forKey: (__bridge NSString *)kCFStreamPropertySSLSettings]) {

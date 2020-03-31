@@ -324,22 +324,28 @@
 }
 
 - (void) _testCertificateAuthentication {
-    NSString* urlString = [NSString stringWithFormat: @"ws://127.0.0.1:8080/%@", otherDB.name];
+    CBLDatabase.log.console.level = kCBLLogLevelInfo;
+    NSError* error = nil;
+    SecIdentityRef ref = MYGetOrCreateAnonymousIdentity(@"MyCertIdentity",
+                                                        kMYAnonymousIdentityDefaultExpirationInterval,
+                                                        &error);
+    NSString* urlString = [NSString stringWithFormat: @"wss://127.0.0.1:8080/%@", otherDB.name];
     NSURL* url = [[NSURL alloc] initWithString: urlString];
-    CBLURLEndpointListener* list = [self listenTo: url.host port: 8080 database: otherDB];
+    CBLTLSIdentity* tls = [[CBLTLSIdentity alloc] initWithIdentity: ref caCerts: @[]];
+    
+    id config = [[CBLURLEndpointListenerConfiguration alloc] initWithDatabase: otherDB
+                                                                         port: 8080 identity: tls];
+    CBLURLEndpointListener* list = [self listen: config];
+    
     
     [self generateDocumentWithID: @"doc-1"];
     CBLURLEndpoint* target = [[CBLURLEndpoint alloc] initWithURL: url];
-    CBLReplicatorConfiguration* config = [self configWithTarget: target
-                                                           type: kCBLReplicatorTypePush
-                                                     continuous: NO];
+    CBLReplicatorConfiguration* rConfig = [[CBLReplicatorConfiguration alloc] initWithDatabase: self.db
+                                                                                        target: target];
     
-    NSError* error = nil;
-    SecIdentityRef ref = MYGetOrCreateAnonymousIdentity(@"MyCertIdentity", 10, &error);
     CBLClientCertAuthenticator* certAuth = [[CBLClientCertAuthenticator alloc] initWithIdentityID: @"MyCertIdentity"];
-    config.authenticator = certAuth;
-    CFRelease(ref);
-    [self run: config errorCode: 0 errorDomain: nil];
+    rConfig.authenticator = certAuth;
+    [self run: rConfig errorCode: 0 errorDomain: nil];
     
     AssertEqual(self.db.count, 1);
     AssertEqual(otherDB.count, 1);
