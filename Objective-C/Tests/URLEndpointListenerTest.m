@@ -87,6 +87,35 @@
     [list stop];
 }
 
+- (void) testReadOnlyListener {
+    CBLDatabase.log.console.level = kCBLLogLevelInfo;
+    NSString* urlString = [NSString stringWithFormat: @"ws://localhost:4984/%@", otherDB.name];
+    NSURL* url = [[NSURL alloc] initWithString: urlString];
+    CBLURLEndpointListenerConfiguration* config;
+    config = [[CBLURLEndpointListenerConfiguration alloc] initWithDatabase: otherDB port: 4984
+                                                          networkInterface: nil
+                                                                  identity: nil];
+    config.readOnly = YES;
+    CBLURLEndpointListener* list = [self listen: config];
+
+    [self generateDocumentWithID: @"doc-1"];
+    CBLMutableDocument* doc = [self createDocument: @"doc-2"];
+    [doc setString: @"avl" forKey:@"key1"];
+    NSError* error;
+    [otherDB saveDocument: doc error: &error];
+    
+    CBLURLEndpoint* target = [[CBLURLEndpoint alloc] initWithURL: url];
+    id rConfig = [self configWithTarget: target type: kCBLReplicatorTypePushAndPull continuous: NO];
+    [self run: rConfig errorCode: CBLErrorRemoteError errorDomain: CBLErrorDomain];
+    
+    AssertEqual(self.db.count, 2);
+    AssertEqual(otherDB.count, 1);
+    
+    // TODO: get and verify the ports are same!
+    
+    [list stop];
+}
+
 
 - (void) testCustomNetworkInterface {
     NSString* urlString = [NSString stringWithFormat: @"ws://127.0.0.1:8080/%@", otherDB.name];
