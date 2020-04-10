@@ -51,9 +51,9 @@
 
 - (void) testCustomPort {
     CBLDatabase.log.console.level = kCBLLogLevelInfo;
-    NSString* urlString = [NSString stringWithFormat: @"ws://localhost:5666/%@", otherDB.name];
+    NSString* urlString = [NSString stringWithFormat: @"ws://localhost:5666/%@", self.otherDB.name];
     NSURL* url = [[NSURL alloc] initWithString: urlString];
-    CBLURLEndpointListener* list = [self listenTo: nil port: 5666 database: otherDB];
+    CBLURLEndpointListener* list = [self listenTo: nil port: 5666 database: self.otherDB];
 
     [self generateDocumentWithID: @"doc-1"];
     CBLURLEndpoint* target = [[CBLURLEndpoint alloc] initWithURL: url];
@@ -61,7 +61,7 @@
     [self run: config errorCode: 0 errorDomain: nil];
     
     AssertEqual(self.db.count, 1);
-    AssertEqual(otherDB.count, 1);
+    AssertEqual(self.otherDB.count, 1);
     
     // TODO: get and verify the ports are same!
     
@@ -70,9 +70,9 @@
 
 - (void) testDefaultPort {
     CBLDatabase.log.console.level = kCBLLogLevelInfo;
-    NSString* urlString = [NSString stringWithFormat: @"ws://localhost:4984/%@", otherDB.name];
+    NSString* urlString = [NSString stringWithFormat: @"ws://localhost:4984/%@", self.otherDB.name];
     NSURL* url = [[NSURL alloc] initWithString: urlString];
-    CBLURLEndpointListener* list = [self listenTo: nil port: 0 database: otherDB];
+    CBLURLEndpointListener* list = [self listenTo: nil port: 0 database: self.otherDB];
 
     [self generateDocumentWithID: @"doc-1"];
     CBLURLEndpoint* target = [[CBLURLEndpoint alloc] initWithURL: url];
@@ -80,7 +80,7 @@
     [self run: config errorCode: 0 errorDomain: nil];
     
     AssertEqual(self.db.count, 1);
-    AssertEqual(otherDB.count, 1);
+    AssertEqual(self.otherDB.count, 1);
     
     // TODO: get and verify the ports are same!
     
@@ -89,10 +89,10 @@
 
 - (void) testReadOnlyListener {
     CBLDatabase.log.console.level = kCBLLogLevelInfo;
-    NSString* urlString = [NSString stringWithFormat: @"ws://localhost:4984/%@", otherDB.name];
+    NSString* urlString = [NSString stringWithFormat: @"ws://localhost:4984/%@", self.otherDB.name];
     NSURL* url = [[NSURL alloc] initWithString: urlString];
     CBLURLEndpointListenerConfiguration* config;
-    config = [[CBLURLEndpointListenerConfiguration alloc] initWithDatabase: otherDB port: 4984
+    config = [[CBLURLEndpointListenerConfiguration alloc] initWithDatabase: self.otherDB port: 4984
                                                           networkInterface: nil
                                                                   identity: nil];
     config.readOnly = YES;
@@ -102,14 +102,14 @@
     CBLMutableDocument* doc = [self createDocument: @"doc-2"];
     [doc setString: @"avl" forKey:@"key1"];
     NSError* error;
-    [otherDB saveDocument: doc error: &error];
+    [self.otherDB saveDocument: doc error: &error];
     
     CBLURLEndpoint* target = [[CBLURLEndpoint alloc] initWithURL: url];
     id rConfig = [self configWithTarget: target type: kCBLReplicatorTypePushAndPull continuous: NO];
     [self run: rConfig errorCode: CBLErrorRemoteError errorDomain: CBLErrorDomain];
     
     AssertEqual(self.db.count, 2);
-    AssertEqual(otherDB.count, 1);
+    AssertEqual(self.otherDB.count, 1);
     
     // TODO: get and verify the ports are same!
     
@@ -118,9 +118,9 @@
 
 
 - (void) testCustomNetworkInterface {
-    NSString* urlString = [NSString stringWithFormat: @"ws://127.0.0.1:8080/%@", otherDB.name];
+    NSString* urlString = [NSString stringWithFormat: @"ws://127.0.0.1:8080/%@", self.otherDB.name];
     NSURL* url = [[NSURL alloc] initWithString: urlString];
-    CBLURLEndpointListener* list = [self listenTo: url.host port: 8080 database: otherDB];
+    CBLURLEndpointListener* list = [self listenTo: url.host port: 8080 database: self.otherDB];
 
     [self generateDocumentWithID: @"doc-1"];
     CBLURLEndpoint* target = [[CBLURLEndpoint alloc] initWithURL: url];
@@ -128,7 +128,7 @@
     [self run: config errorCode: 0 errorDomain: nil];
     
     AssertEqual(self.db.count, 1);
-    AssertEqual(otherDB.count, 1);
+    AssertEqual(self.otherDB.count, 1);
     
     // TODO: check the custom network interface is same!
     
@@ -175,12 +175,12 @@
     NSError* err = nil;
     CBLMutableDocument* doc2 = [self createDocument: @"doc-2"];
     [doc2 setString: @"VALUE" forKey: @"key"];
-    [otherDB saveDocument: doc2 error: &err];
+    [self.otherDB saveDocument: doc2 error: &err];
     
     // passive listener - otherDB
-    NSString* urlString = [NSString stringWithFormat: @"ws://127.0.0.1:8080/%@", otherDB.name];
+    NSString* urlString = [NSString stringWithFormat: @"ws://127.0.0.1:8080/%@", self.otherDB.name];
     NSURL* urlToOtherDB = [[NSURL alloc] initWithString: urlString];
-    CBLURLEndpointListener* listToOtherDB = [self listenTo: urlToOtherDB.host port: 8080 database: otherDB];
+    CBLURLEndpointListener* listToOtherDB = [self listenTo: urlToOtherDB.host port: 8080 database: self.otherDB];
     
     // passive listener - self.db
     urlString = [NSString stringWithFormat: @"ws://127.0.0.1:8081/%@", self.db.name];
@@ -192,12 +192,12 @@
     [self run: config errorCode: 0 errorDomain: nil];
     
     CBLURLEndpoint* targetToDB = [[CBLURLEndpoint alloc] initWithURL: urlToDB];
-    CBLReplicatorConfiguration* c = [[CBLReplicatorConfiguration alloc] initWithDatabase: otherDB
+    CBLReplicatorConfiguration* c = [[CBLReplicatorConfiguration alloc] initWithDatabase: self.otherDB
                                                                                   target: targetToDB];
     [self run: c errorCode: 0 errorDomain: nil];
     
     AssertEqual(self.db.count, 2);
-    AssertEqual(otherDB.count, 2);
+    AssertEqual(self.otherDB.count, 2);
     
     // TODO: check the custom network interface is same!
     
@@ -214,18 +214,18 @@
     
     doc1 = [self createDocument: @"doc-1"];
     [doc1 setString: @"add" forKey: @"action"];
-    Assert([otherDB saveDocument: doc1 error: &err]);
+    Assert([self.otherDB saveDocument: doc1 error: &err]);
     AssertNil(err);
     
-    doc1 = [[otherDB documentWithID: @"doc-1"] toMutable];
+    doc1 = [[self.otherDB documentWithID: @"doc-1"] toMutable];
     [doc1 setString: @"addition" forKey: @"action"];
-    Assert([otherDB saveDocument: doc1 error: &err]);
+    Assert([self.otherDB saveDocument: doc1 error: &err]);
     AssertNil(err);
-    AssertEqual([otherDB documentWithID: @"doc-1"].sequence, 2);
+    AssertEqual([self.otherDB documentWithID: @"doc-1"].sequence, 2);
     
-    NSString* urlString = [NSString stringWithFormat: @"ws://127.0.0.1:8080/%@", otherDB.name];
+    NSString* urlString = [NSString stringWithFormat: @"ws://127.0.0.1:8080/%@", self.otherDB.name];
     NSURL* url = [[NSURL alloc] initWithString: urlString];
-    CBLURLEndpointListener* list = [self listenTo: url.host port: 8080 database: otherDB];
+    CBLURLEndpointListener* list = [self listenTo: url.host port: 8080 database: self.otherDB];
 
     CBLURLEndpoint* target = [[CBLURLEndpoint alloc] initWithURL: url];
     id config = [self configWithTarget: target type: kCBLReplicatorTypePushAndPull continuous: NO];
@@ -234,8 +234,8 @@
     AssertEqual(self.db.count, 1);
     AssertEqual([self.db documentWithID: @"doc-1"].sequence, 2);
     
-    AssertEqual(otherDB.count, 1);
-    AssertEqual([otherDB documentWithID: @"doc-1"].sequence, 2);
+    AssertEqual(self.otherDB.count, 1);
+    AssertEqual([self.otherDB documentWithID: @"doc-1"].sequence, 2);
     
     [list stop];
 }
@@ -308,10 +308,10 @@
     CBLURLEndpointListenerConfiguration * config;
     CBLTLSIdentity* tls = [CBLTLSIdentity createServerIdentity: @{} expiration: nil error: &error];
     
-    config = [[CBLURLEndpointListenerConfiguration alloc] initWithDatabase: otherDB
+    config = [[CBLURLEndpointListenerConfiguration alloc] initWithDatabase: self.otherDB
                                                                       port: 8080 identity: tls];
     
-    NSString* urlString = [NSString stringWithFormat: @"wss://127.0.0.1:8080/%@", otherDB.name];
+    NSString* urlString = [NSString stringWithFormat: @"wss://127.0.0.1:8080/%@", self.otherDB.name];
     NSURL* url = [[NSURL alloc] initWithString: urlString];
     CBLURLEndpointListener* list = [self listen: config];
     
@@ -331,9 +331,9 @@
 
 #pragma mark - Authentication
 - (void) testBasicAuthentication {
-    NSString* urlString = [NSString stringWithFormat: @"ws://127.0.0.1:8080/%@", otherDB.name];
+    NSString* urlString = [NSString stringWithFormat: @"ws://127.0.0.1:8080/%@", self.otherDB.name];
     NSURL* url = [[NSURL alloc] initWithString: urlString];
-    CBLURLEndpointListener* list = [self listenTo: url.host port: 8080 database: otherDB];
+    CBLURLEndpointListener* list = [self listenTo: url.host port: 8080 database: self.otherDB];
     
     [self generateDocumentWithID: @"doc-1"];
     CBLURLEndpoint* target = [[CBLURLEndpoint alloc] initWithURL: url];
@@ -345,7 +345,7 @@
     [self run: config errorCode: 0 errorDomain: nil];
     
     AssertEqual(self.db.count, 1);
-    AssertEqual(otherDB.count, 1);
+    AssertEqual(self.otherDB.count, 1);
     
     // TODO: check the custom network interface is same!
     
@@ -358,11 +358,11 @@
     SecIdentityRef ref = MYGetOrCreateAnonymousIdentity(@"MyCertIdentity",
                                                         kMYAnonymousIdentityDefaultExpirationInterval,
                                                         &error);
-    NSString* urlString = [NSString stringWithFormat: @"wss://127.0.0.1:8080/%@", otherDB.name];
+    NSString* urlString = [NSString stringWithFormat: @"wss://127.0.0.1:8080/%@", self.otherDB.name];
     NSURL* url = [[NSURL alloc] initWithString: urlString];
     CBLTLSIdentity* tls = [[CBLTLSIdentity alloc] initWithIdentity: ref caCerts: @[]];
     
-    id config = [[CBLURLEndpointListenerConfiguration alloc] initWithDatabase: otherDB
+    id config = [[CBLURLEndpointListenerConfiguration alloc] initWithDatabase: self.otherDB
                                                                          port: 8080 identity: tls];
     CBLURLEndpointListener* list = [self listen: config];
     
@@ -377,7 +377,7 @@
     [self run: rConfig errorCode: 0 errorDomain: nil];
     
     AssertEqual(self.db.count, 1);
-    AssertEqual(otherDB.count, 1);
+    AssertEqual(self.otherDB.count, 1);
     
     // TODO: check the custom network interface is same!
     
