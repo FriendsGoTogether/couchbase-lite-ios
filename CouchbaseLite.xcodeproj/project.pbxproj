@@ -1404,6 +1404,34 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		1A410EFD2440F669009B89EF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9398D9311E0347B600464432 /* LiteCore.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 2771A097228624C000B18E0A;
+			remoteInfo = LiteCoreWebSocket;
+		};
+		1A410EFF2440F670009B89EF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9398D9311E0347B600464432 /* LiteCore.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 2771A097228624C000B18E0A;
+			remoteInfo = LiteCoreWebSocket;
+		};
+		1A410F012440F677009B89EF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9398D9311E0347B600464432 /* LiteCore.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 2771A097228624C000B18E0A;
+			remoteInfo = LiteCoreWebSocket;
+		};
+		1A410F032440F67D009B89EF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9398D9311E0347B600464432 /* LiteCore.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 2771A097228624C000B18E0A;
+			remoteInfo = LiteCoreWebSocket;
+		};
 		1ACDD8D123FF5BB300AF5D56 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 9398D9311E0347B600464432 /* LiteCore.xcodeproj */;
@@ -4044,6 +4072,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				1A410F022440F677009B89EF /* PBXTargetDependency */,
 				9308F40E1E64B24700F53EE4 /* PBXTargetDependency */,
 			);
 			name = "CBL Swift";
@@ -4099,6 +4128,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				1A410F002440F670009B89EF /* PBXTargetDependency */,
 				9343EF2B207D611600F19A89 /* PBXTargetDependency */,
 			);
 			name = "CBL-EE ObjC";
@@ -4119,6 +4149,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				1A410EFE2440F669009B89EF /* PBXTargetDependency */,
 				9343F012207D61AB00F19A89 /* PBXTargetDependency */,
 			);
 			name = "CBL-EE Swift";
@@ -4266,6 +4297,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				1A410F042440F67D009B89EF /* PBXTargetDependency */,
 				9399E4AF1E932EE800B57600 /* PBXTargetDependency */,
 			);
 			name = "CBL ObjC";
@@ -5516,6 +5548,26 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		1A410EFE2440F669009B89EF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = LiteCoreWebSocket;
+			targetProxy = 1A410EFD2440F669009B89EF /* PBXContainerItemProxy */;
+		};
+		1A410F002440F670009B89EF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = LiteCoreWebSocket;
+			targetProxy = 1A410EFF2440F670009B89EF /* PBXContainerItemProxy */;
+		};
+		1A410F022440F677009B89EF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = LiteCoreWebSocket;
+			targetProxy = 1A410F012440F677009B89EF /* PBXContainerItemProxy */;
+		};
+		1A410F042440F67D009B89EF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = LiteCoreWebSocket;
+			targetProxy = 1A410F032440F67D009B89EF /* PBXContainerItemProxy */;
+		};
 		275F927F1E4D30A4007FD5A2 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 275F92731E4D30A4007FD5A2 /* CBL Swift */;
